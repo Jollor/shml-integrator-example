@@ -23,9 +23,8 @@ FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=builder /app/.next ./
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder package.json ./
+COPY --from=builder /app/.next ./.next
+COPY package.json ./
 
 EXPOSE 3000
-CMD ["npm", "start"]
+CMD ["yarn", "start"]
