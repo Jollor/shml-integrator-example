@@ -1,35 +1,31 @@
-FROM node:18-alpine AS deps
-RUN apk add --no-cache libc6-compat
+FROM node:lts-alpine AS base
+
+# Stage 1: Install dependencies
+FROM base AS deps
+WORKDIR /app
+COPY package.json yarn.lock ./
 RUN set -eux \
     & apk add \
         --no-cache \
         yarn
-WORKDIR /app
+RUN yarn install
 
-COPY package.json yarn.lock ./
-RUN  yarn install --production
-
-FROM node:18-alpine AS builder
+# Stage 2: Build the application
+FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
 RUN yarn run build
 
-FROM node:18-alpine AS runner
+# Stage 3: Production server
+
+FROM base AS runner
 WORKDIR /app
-
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./package.json
-
-USER nextjs
+ENV NODE_ENV=production
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=builder /app/.next ./
+COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder package.json ./
 
 EXPOSE 3000
-
-ENV PORT 3000
-
-CMD ["yarn", "start"]
+CMD ["npm", "start"]
