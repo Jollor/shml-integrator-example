@@ -27,4 +27,4 @@ COPY --from=builder /app/.next ./.next
 COPY package.json ./
 
 EXPOSE 3000
-CMD ["yarn", "start --hostname=0.0.0.0"]
+CMD ["yarn", "start", "--hostname=0.0.0.0"]
